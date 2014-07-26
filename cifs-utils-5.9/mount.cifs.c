@@ -110,6 +110,21 @@
 #define CIFS_DISABLE_SETUID_CAPABILITY 0
 
 /*
+ * By default, mount.cifs follows the conventions set forth by /bin/mount
+ * for user mounts. That is, it requires that the mount be listed in
+ * /etc/fstab with the "user" option when run as an unprivileged user and
+ * mount.cifs is setuid root.
+ *
+ * Older versions of mount.cifs however were "looser" in this regard. When
+ * made setuid root, a user could run mount.cifs directly and mount any share
+ * on a directory owned by that user.
+ *
+ * The legacy behavior is now disabled by default. To reenable it, set the
+ * following #define to true.
+ */
+#define CIFS_LEGACY_SETUID_CHECK 1
+
+/*
  * When an unprivileged user runs a setuid mount.cifs, we set certain mount
  * flags by default. These defaults can be changed here.
  */
@@ -209,6 +224,11 @@ static int check_setuid(void)
 static int
 check_fstab(const char *progname, const char *mountpoint, const char *devname,
 	    char **options)
+#ifdef CIFS_LEGACY_SETUID_CHECK
+{
+        return 0;
+}
+#else
 {
 	FILE *fstab;
 	struct mntent *mnt;
@@ -242,6 +262,7 @@ check_fstab(const char *progname, const char *mountpoint, const char *devname,
 	*options = strdup(mnt->mnt_opts);
 	return 0;
 }
+#endif
 
 /* BB finish BB
 
