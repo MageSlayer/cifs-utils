@@ -1,4 +1,4 @@
-/* 
+/*
    Unmount utility program for Linux CIFS VFS (virtual filesystem) client
    Copyright (C) 2005 Steve French  (sfrench@us.ibm.com)
 
@@ -6,12 +6,12 @@
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -69,7 +69,7 @@
 
 #define CIFS_IOC_CHECKUMOUNT _IO(0xCF, 2)
 #define CIFS_MAGIC_NUMBER 0xFF534D42   /* the first four bytes of SMB PDU */
-   
+
 static struct option longopts[] = {
 	{ "all", 0, NULL, 'a' },
 	{ "help",0, NULL, 'h' },
@@ -123,6 +123,10 @@ static int umount_check_perm(char * dir)
 		return errno;
 	}
 
+	/*
+	  Recent kernels (3.15 tested) do not seem to have this ioctl defined,
+	  so let's skip it.
+
 	rc = ioctl(fileid, CIFS_IOC_CHECKUMOUNT, NULL);
 
 	if(verboseflg)
@@ -134,6 +138,8 @@ static int umount_check_perm(char * dir)
 		printf("\n\tand requires cifs.ko version 1.32 or later\n");
 	} else if (rc != 0)
 		printf("user unmount of %s failed with %d %s\n",dir,errno,strerror(errno));
+	*/
+
 	close(fileid);
 
 	return rc;
@@ -152,14 +158,14 @@ static int remove_from_mtab(char * mountpoint)
 	if ((lstat(MOUNTED, &statbuf) == 0) && (S_ISLNK(statbuf.st_mode)))
 		return 0;
 
-	/* Do we first need to check if it is writable? */ 
+	/* Do we first need to check if it is writable? */
 
 	atexit(unlock_mtab);
 	if (lock_mtab()) {
 		printf("Mount table locked\n");
 		return -EACCES;
 	}
-	
+
 	if(verboseflg)
 		printf("attempting to remove from mtab\n");
 
@@ -184,10 +190,10 @@ static int remove_from_mtab(char * mountpoint)
 		if(strcmp(mount_entry->mnt_dir, mountpoint) == 0) {
 			num_matches++;
 		}
-	}	
+	}
 	if(verboseflg)
 		printf("%d matching entries in mount table\n", num_matches);
-		
+
 	/* Is there a better way to seek back to the first entry in mtab? */
 	endmntent(org_fd);
 	org_fd = setmntent(MOUNTED, "r");
@@ -197,7 +203,7 @@ static int remove_from_mtab(char * mountpoint)
 		unlock_mtab();
 		return -EIO;
 	}
-	
+
 	while((mount_entry = getmntent(org_fd)) != NULL) {
 		if(strcmp(mount_entry->mnt_dir, mountpoint) != 0) {
 			addmntent(new_fd, mount_entry);
@@ -229,7 +235,7 @@ static int remove_from_mtab(char * mountpoint)
 	}
 
 	unlock_mtab();
-	
+
 	return rc;
 }
 
@@ -298,7 +304,7 @@ int main(int argc, char ** argv)
 			 longopts, NULL)) != -1) {
 		switch (c) {
 /* No code to do the following  option yet */
-/*		case 'a':	       
+/*		case 'a':
 			++umount_all;
 			break; */
 		case '?':
@@ -323,7 +329,7 @@ int main(int argc, char ** argv)
 		case 'v':
 			++verboseflg;
 			break;
-		case 'V':	   
+		case 'V':
 			printf ("umount.cifs version: %s.%s%s\n",
 				UNMOUNT_CIFS_VERSION_MAJOR,
 				UNMOUNT_CIFS_VERSION_MINOR,
@@ -370,7 +376,7 @@ int main(int argc, char ** argv)
 
 	/* make sure that this is a cifs filesystem */
 	rc = statfs(mountpoint, &statbuf);
-	
+
 	if(rc || (statbuf.f_type != CIFS_MAGIC_NUMBER)) {
 		printf("This utility only unmounts cifs filesystems.\n");
 		return -EINVAL;
@@ -403,4 +409,3 @@ int main(int argc, char ** argv)
 
 	return 0;
 }
-
