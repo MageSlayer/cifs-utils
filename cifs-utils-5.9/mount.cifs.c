@@ -124,6 +124,12 @@
  */
 #define CIFS_LEGACY_SETUID_CHECK 1
 
+#if CIFS_LEGACY_SETUID_CHECK
+  /* drop caps usage, otherwise it can't open credentials file for some reason */
+  #undef HAVE_LIBCAP_NG
+  #undef HAVE_LIBCAP
+#endif
+
 /*
  * When an unprivileged user runs a setuid mount.cifs, we set certain mount
  * flags by default. These defaults can be changed here.
